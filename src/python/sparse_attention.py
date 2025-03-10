@@ -295,4 +295,15 @@ def print_device_info():
         for key, value in info.items():
             print(f"  {key}: {value}")
     else:
-        print("CUDA is not available.") 
+        print("CUDA is not available. Using fallback NumPy implementation.")
+        print("CPU Information:")
+        import platform
+        print(f"  Processor: {platform.processor()}")
+        print(f"  System: {platform.system()} {platform.release()}")
+        print(f"  Python: {platform.python_version()}")
+        try:
+            import psutil
+            print(f"  Memory: {psutil.virtual_memory().total / (1024**3):.2f} GB")
+            print(f"  CPU Cores: {psutil.cpu_count(logical=False)} (Physical), {psutil.cpu_count()} (Logical)")
+        except ImportError:
+            pass 

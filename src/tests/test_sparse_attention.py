@@ -1,6 +1,14 @@
 import numpy as np
 import pytest
-import torch
+
+# Try to import torch, but make it optional
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    print("PyTorch not available. Some tests will be skipped.")
+
 from ..python.sparse_attention import (
     sparse_attention,
     create_sparsity_mask_from_positions,
@@ -61,6 +69,10 @@ def test_create_block_sparsity_mask():
 
 def test_sparse_attention_fallback():
     """Test the fallback implementation of sparse attention."""
+    # Skip if PyTorch is not available
+    if not TORCH_AVAILABLE:
+        pytest.skip("PyTorch not available")
+    
     # Create a simple test case
     N, D = 4, 3
     q = np.array([

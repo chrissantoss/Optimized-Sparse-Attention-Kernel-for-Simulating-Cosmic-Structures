@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import json
 from typing import Dict, List, Tuple, Any
+from pathlib import Path
 
 from ..python.sparse_attention import (
     sparse_attention,
@@ -14,6 +15,17 @@ from ..python.sparse_attention import (
     benchmark_sparse_vs_dense,
     print_device_info
 )
+
+# Add a custom JSON encoder to handle NumPy types
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumpyEncoder, self).default(obj)
 
 def run_benchmark(
     particle_counts: List[int],
@@ -68,7 +80,7 @@ def run_benchmark(
     # Save results to JSON
     results_file = os.path.join(output_dir, f"benchmark_N{min(particle_counts)}-{max(particle_counts)}_D{feature_dim}_S{sparsity:.2f}.json")
     with open(results_file, 'w') as f:
-        json.dump(results, f, indent=2)
+        json.dump(results, f, indent=2, cls=NumpyEncoder)
     
     # Plot results
     plot_benchmark_results(results, output_dir)
@@ -83,15 +95,19 @@ def plot_benchmark_results(results: Dict[int, Dict[str, Any]], output_dir: str):
         results: Dictionary mapping particle counts to benchmark results
         output_dir: Directory to save plots
     """
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Extract data
     particle_counts = sorted(list(map(int, results.keys())))
     
     # Extract data
-    sparse_times = [results[str(N)]["sparse_time_ms"] for N in particle_counts]
-    dense_times = [results[str(N)]["dense_time_ms"] for N in particle_counts]
-    speedups = [results[str(N)]["speedup"] for N in particle_counts]
-    sparse_memory = [results[str(N)]["sparse_memory_mb"] for N in particle_counts]
-    dense_memory = [results[str(N)]["dense_memory_mb"] for N in particle_counts]
-    memory_reductions = [results[str(N)]["memory_reduction"] for N in particle_counts]
+    sparse_times = [results[N]["sparse_time_ms"] for N in particle_counts]
+    dense_times = [results[N]["dense_time_ms"] for N in particle_counts]
+    speedups = [results[N]["speedup"] for N in particle_counts]
+    sparse_memory = [results[N]["sparse_memory_mb"] for N in particle_counts]
+    dense_memory = [results[N]["dense_memory_mb"] for N in particle_counts]
+    memory_reductions = [results[N]["memory_reduction"] for N in particle_counts]
     
     # Plot runtime
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -189,7 +205,7 @@ def benchmark_sparsity_levels(
     # Save results to JSON
     results_file = os.path.join(output_dir, f"benchmark_sparsity_N{N}_D{feature_dim}.json")
     with open(results_file, 'w') as f:
-        json.dump(results, f, indent=2)
+        json.dump(results, f, indent=2, cls=NumpyEncoder)
     
     # Plot results
     plot_sparsity_results(results, output_dir)
@@ -204,13 +220,16 @@ def plot_sparsity_results(results: Dict[float, Dict[str, Any]], output_dir: str)
         results: Dictionary mapping sparsity levels to benchmark results
         output_dir: Directory to save plots
     """
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+    
     sparsity_levels = sorted(list(map(float, results.keys())))
     
     # Extract data
-    sparse_times = [results[str(s)]["sparse_time_ms"] for s in sparsity_levels]
-    dense_times = [results[str(s)]["dense_time_ms"] for s in sparsity_levels]
-    speedups = [results[str(s)]["speedup"] for s in sparsity_levels]
-    memory_reductions = [results[str(s)]["memory_reduction"] for s in sparsity_levels]
+    sparse_times = [results[s]["sparse_time_ms"] for s in sparsity_levels]
+    dense_times = [results[s]["dense_time_ms"] for s in sparsity_levels]
+    speedups = [results[s]["speedup"] for s in sparsity_levels]
+    memory_reductions = [results[s]["memory_reduction"] for s in sparsity_levels]
     
     # Plot runtime
     fig, ax = plt.subplots(figsize=(10, 6))

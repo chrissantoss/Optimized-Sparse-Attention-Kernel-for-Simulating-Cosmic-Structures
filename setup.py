@@ -9,14 +9,16 @@ cuda_path = os.environ.get('CUDA_PATH', '/usr/local/cuda')
 cutlass_path = os.environ.get('CUTLASS_PATH', os.path.expanduser('~/cutlass'))
 
 # Check if CUDA is available
-if not os.path.exists(cuda_path):
-    print(f"CUDA not found at {cuda_path}. Please set CUDA_PATH environment variable.")
-    sys.exit(1)
+cuda_available = os.path.exists(cuda_path)
+if not cuda_available:
+    print(f"CUDA not found at {cuda_path}. Building without CUDA support.")
+    print("The sparse attention kernel will use the fallback NumPy implementation.")
 
 # Check if CUTLASS is available
-if not os.path.exists(cutlass_path):
-    print(f"CUTLASS not found at {cutlass_path}. Please set CUTLASS_PATH environment variable.")
-    sys.exit(1)
+cutlass_available = os.path.exists(cutlass_path)
+if not cutlass_available and cuda_available:
+    print(f"CUTLASS not found at {cutlass_path}. Building without CUTLASS support.")
+    print("This may affect performance of the sparse attention kernel.")
 
 # Detect CUDA architecture
 def get_cuda_arch():
@@ -43,7 +45,7 @@ def get_cuda_arch():
         print(f"Failed to detect CUDA architecture: {e}")
         return default_arch
 
-cuda_arch = get_cuda_arch()
+cuda_arch = get_cuda_arch() if cuda_available else None
 
 # Custom build extension for CUDA
 class CUDAExtension(Extension):
@@ -54,7 +56,7 @@ class BuildExt(build_ext):
     def build_extensions(self):
         # Customize compiler flags
         for ext in self.extensions:
-            if isinstance(ext, CUDAExtension):
+            if isinstance(ext, CUDAExtension) and cuda_available:
                 self.build_cuda_extension(ext)
             else:
                 super().build_extensions()
@@ -96,10 +98,15 @@ class BuildExt(build_ext):
         subprocess.check_call(build_cmd)
 
 # Define extension
-sparse_attention_ext = CUDAExtension(
-    'src.python.sparse_attention_cuda',
-    ['src/python/sparse_attention_bindings.cpp', 'src/cuda/sparse_attention.cu'],
-)
+if cuda_available:
+    sparse_attention_ext = CUDAExtension(
+        'src.python.sparse_attention_cuda',
+        ['src/python/sparse_attention_bindings.cpp', 'src/cuda/sparse_attention.cu'],
+    )
+    ext_modules = [sparse_attention_ext]
+else:
+    # No CUDA extensions if CUDA is not available
+    ext_modules = []
 
 # Setup
 setup(
@@ -109,7 +116,7 @@ setup(
     author='Your Name',
     author_email='your.email@example.com',
     packages=['src', 'src.python', 'src.utils', 'src.tests'],
-    ext_modules=[sparse_attention_ext],
+    ext_modules=ext_modules,
     cmdclass={'build_ext': BuildExt},
     install_requires=[
         'numpy>=1.20.0',
