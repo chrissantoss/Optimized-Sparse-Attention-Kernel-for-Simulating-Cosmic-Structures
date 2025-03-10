@@ -1,0 +1,11 @@
+numpy>=1.20.0
+jax>=0.3.4
+jaxlib>=0.3.4
+pybind11>=2.9.0
+matplotlib>=3.5.0
+pytest>=7.0.0
+jupyter>=1.0.0
+tqdm>=4.62.0
+scipy>=1.8.0
+torch>=1.10.0  # For comparison with PyTorch's dense attention
+cupy-cuda11x>=10.6.0  # For CUDA operations in Python (adjust cuda version as needed) 

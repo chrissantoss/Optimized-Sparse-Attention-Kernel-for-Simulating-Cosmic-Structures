@@ -154,4 +154,3 @@ MIT
 ## Acknowledgements
 
 This project was developed as part of research into optimizing attention mechanisms for scientific simulations.
-# Optimized-Sparse-Attention-Kernel-for-Simulating-Cosmic-Structures
