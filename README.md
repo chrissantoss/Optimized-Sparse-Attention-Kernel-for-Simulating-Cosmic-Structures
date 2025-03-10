@@ -22,6 +22,8 @@ A toy astrophysical simulation demonstrates its application, modeling particle i
 │   ├── utils/          # Utility functions
 │   └── tests/          # Unit tests
 ├── notebooks/          # Jupyter notebooks for demos and visualization
+├── main.py             # Main script to run the project
+├── install.sh          # Installation script
 └── README.md           # This file
 ```
 
@@ -36,44 +38,114 @@ A toy astrophysical simulation demonstrates its application, modeling particle i
 - pybind11
 - NVIDIA GPU with Tensor Cores (e.g., RTX 3090, A100, T4)
 
-### Setup
+### Quick Installation
+
+The easiest way to install the project is to use the provided installation script:
 
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/sparse-attention-cosmic-sim.git
 cd sparse-attention-cosmic-sim
 
+# Run the installation script
+./install.sh
+```
+
+### Manual Installation
+
+If you prefer to install manually:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/sparse-attention-cosmic-sim.git
+cd sparse-attention-cosmic-sim
+
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate
+
 # Install dependencies
 pip install -r requirements.txt
 
 # Build the CUDA extension
-cd src/cuda
-make
+python setup.py build_ext --inplace
 ```
 
 ## Usage
 
-```python
-import jax
-import jax.numpy as jnp
-from src.python.sparse_attention import sparse_attention
+### Running the Simulation
 
-# Example usage
-q = jnp.random.normal(size=(4096, 64))
-k = jnp.random.normal(size=(4096, 64))
-v = jnp.random.normal(size=(4096, 64))
-mask = create_sparsity_mask(q, threshold=0.01)  # Create mask based on proximity
+To run the cosmic particle simulation:
 
-# Apply sparse attention
-output = sparse_attention(q, k, v, mask)
+```bash
+python main.py simulate --num-particles 1024 --num-steps 100
 ```
 
-## Benchmarks
+This will run a simulation with 1024 particles for 100 time steps and save the results in the `simulation_results` directory.
+
+### Running Benchmarks
+
+To benchmark the sparse attention kernel:
+
+```bash
+# Benchmark with different numbers of particles
+python main.py benchmark --mode particles --particles 512 1024 2048 4096
+
+# Benchmark with different sparsity levels
+python main.py benchmark --mode sparsity --particles 1024 --sparsity-levels 0.5 0.75 0.9 0.95 0.99
+```
+
+### Running Tests
+
+To run the tests:
+
+```bash
+python main.py test
+```
+
+### Checking Device Information
+
+To check your CUDA device information:
+
+```bash
+python main.py info
+```
+
+### Jupyter Notebook Demo
+
+For an interactive demo, you can run the Jupyter notebook:
+
+```bash
+jupyter notebook notebooks/sparse_attention_demo.ipynb
+```
+
+## Performance
+
+The sparse attention implementation achieves significant speedups over dense attention, especially for high sparsity levels:
 
 | Method | Particles | Runtime (ms) | Memory (MB) | Speedup | Memory Reduction |
 |--------|-----------|--------------|-------------|---------|------------------|
 | Dense  | 4096      | 50           | 64          | 1x      | 1x               |
 | Sparse | 4096      | 20           | 16          | 2.5x    | 4x               |
+
+## Debugging and Profiling
+
+The project includes utilities for debugging and profiling:
+
+- `src/utils/profiling.py`: Utilities for profiling and benchmarking
+- NVIDIA Nsight integration for detailed performance analysis
+
+To profile the kernel using Nsight Compute:
+
+```bash
+ncu --export profile.ncu-rep python main.py benchmark --particles 1024
+```
+
+To profile the kernel using Nsight Systems:
+
+```bash
+nsys profile --stats=true -o profile.nsys-rep python main.py benchmark --particles 1024
+```
 
 ## License
 
@@ -81,4 +153,5 @@ MIT
 
 ## Acknowledgements
 
-This project was developed as part of research into optimizing attention mechanisms for scientific simulations. # Optimized-Sparse-Attention-Kernel-for-Simulating-Cosmic-Structures
+This project was developed as part of research into optimizing attention mechanisms for scientific simulations.
+# Optimized-Sparse-Attention-Kernel-for-Simulating-Cosmic-Structures
